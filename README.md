@@ -1,6 +1,6 @@
 # insta_flutter
 
-A new Flutter project.
+An instagram-like photo app, written in Flutter
 
 ## Getting Started
 
