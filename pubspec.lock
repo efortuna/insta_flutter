@@ -81,6 +81,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fluwx:
+    dependency: "direct main"
+    description:
+      path: "/usr/local/google/home/efortuna/github/myFluwx/fluwx"
+      relative: false
+    source: path
+    version: "0.0.8"
   front_end:
     dependency: transitive
     description:
