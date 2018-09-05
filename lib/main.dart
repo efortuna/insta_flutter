@@ -1,109 +1,208 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:io';
 
-void main() => runApp(new MyApp());
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+//import 'package:fluwx/fluwx.dart';
+import 'package:image/image.dart' as image;
+import 'package:path_provider/path_provider.dart';
+
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
-      title: 'Flutter Demo',
-      theme: new ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
-        // counter didn't reset back to zero; the application is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+    return MaterialApp(
+      title: 'Photo App',
+      home: MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  Future<File> _imageFile;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    //Fluwx.registerApp(RegisterModel(appId: "wxd930ea5d5a258f4f"));
+  }
+
+  void _onImageButtonPressed(ImageSource source) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _imageFile = ImagePicker.pickImage(source: source, maxHeight: 350.0);
     });
+  }
+
+  Widget _previewImage() {
+    return FutureBuilder<File>(
+        future: _imageFile,
+        builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.data != null) {
+            return ApplyFilterWidget(snapshot.data);
+          } else if (snapshot.error != null) {
+            return const Text(
+              'Error picking image.',
+              textAlign: TextAlign.center,
+            );
+          } else {
+            return Image.asset('assets/dash.png');
+            ;
+          }
+        });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return new Scaffold(
-      appBar: new AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: new Text(widget.title),
+    return Scaffold(
+      appBar: AppBar(title: Text('Flutter Photo app')),
+      body: Center(child: _previewImage()),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _onImageButtonPressed(ImageSource.camera),
+        heroTag: 'image1',
+        child: const Icon(Icons.photo_camera),
       ),
-      body: new Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: new Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug paint" (press "p" in the console where you ran
-          // "flutter run", or select "Toggle Debug Paint" from the Flutter tool
-          // window in IntelliJ) to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
-            ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+
+class ApplyFilterWidget extends StatefulWidget {
+  final File file;
+
+  ApplyFilterWidget(this.file);
+
+  @override
+  ApplyFilterState createState() => ApplyFilterState();
+}
+
+enum FilterOptions { None, BlackAndWhite, Sepia, Vignette, Emboss }
+
+class ApplyFilterState extends State<ApplyFilterWidget> {
+  //Fluwx _fluwx;
+  FilterOptions _filterState;
+  @override
+  void initState() {
+    super.initState();
+    //_fluwx = Fluwx();
+    _filterState = FilterOptions.None;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        drawImage(_filterState),
+        FloatingActionButton(
+          onPressed: () {
+            /*_fluwx.share(WeChatShareImageModel(
+                image: widget.file.uri.toString(),
+                thumbnail:
+                    'assets://logo.png', // this is to prevent an OOM when the plugin tries to create a thumbnail. :-P
+                scene: WeChatScene.SESSION));*/
+          },
+          heroTag: 'image0',
+          child: const Icon(Icons.share),
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            FilterButton('dashSmall',
+                onTap: () => drawImage(FilterOptions.None)),
+            FilterButton('grayscale',
+                onTap: () => drawImage(FilterOptions.BlackAndWhite)),
+            FilterButton('sepia',
+                onTap: () => drawImage(FilterOptions.Sepia)),
+            FilterButton('vignette',
+                onTap: () => drawImage(FilterOptions.Vignette)),
+            FilterButton('emboss',
+                onTap: () => drawImage(FilterOptions.Emboss)),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget drawImage(FilterOptions newFilter) {
+    setState(() {
+      _filterState = newFilter;
+    });
+    if (_filterState == FilterOptions.None) {
+      return Image.file(widget.file);
+    } else {
+      return FilteredImage(widget.file, _filterState);
+    }
+  }
+}
+
+class FilterButton extends StatelessWidget {
+  GestureTapCallback onTap;
+  String filename;
+  FilterButton(this.filename, {this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Image.asset('assets/$filename.png'),
+      ),
+    );
+  }
+}
+
+class FilteredImage extends StatelessWidget {
+  final File originalFile;
+  final FilterOptions filterState;
+  static int foo = 0;
+  FilteredImage(this.originalFile, this.filterState);
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _localPath,
+      builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
+        if (snapshot.hasData) {
+          image.Image unmodifiedImage =
+              image.decodeImage(originalFile.readAsBytesSync());
+
+          image.Image result = unmodifiedImage;
+          switch (filterState) {
+            case FilterOptions.BlackAndWhite:
+              result = image.grayscale(unmodifiedImage);
+              break;
+            case FilterOptions.Sepia:
+              result = image.sepia(unmodifiedImage);
+              break;
+            case FilterOptions.Vignette:
+              result = image.vignette(unmodifiedImage);
+              break;
+            case FilterOptions.Emboss:
+              result = image.emboss(unmodifiedImage);
+              break;
+            case FilterOptions.None:
+            default:
+              break;
+          }
+          snapshot.data
+              .writeAsBytesSync(image.encodePng(image.copyRotate(result, 90)));
+          return Image.file(snapshot.data);
+        } else {
+          return Image.file(originalFile);
+        }
+      },
+    );
+  }
+
+  Future<File> get _localPath async {
+    var directory = await getApplicationDocumentsDirectory();
+    return File(
+        '${directory.path}/$filterState${originalFile.uri.pathSegments.last}.jpg');
+  }
+}
+
